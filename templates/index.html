@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOJ AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e9ecef;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-log {
+            height: 60vh;  /* Set the height to make the chat log scrollable */
+            overflow-y: auto;  /* Enables vertical scrolling */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-message {
+            max-width: 70%;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        .bot-message {
+            background-color: #f1f1f1;
+            color: black;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #fff;
+        }
+
+        .chat-input input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .chat-input button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+
+        .image-upload {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
+
+        .image-upload input[type="file"] {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .image-upload button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        .image-upload button:hover {
+            background-color: #0056b3;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .typing-indicator span {
+            background-color: #007bff;
+            color: white;
+            padding: 2px 8px;
+            margin-right: 5px;
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            Department Of Justice ChatBot
+        </div>
+
+        <div class="chat-box">
+            <div class="chat-log" id="chat-log">
+                <!-- Chat messages will appear here -->
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type your question here..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+        <div class="image-upload">
+            <input type="file" id="image-input" accept="image/*,text/plain">
+            <button onclick="uploadImage()">Upload File</button>
+        </div>
+    </div>
+
+    <script>
+        function addMessageToChat(message, sender) {
+            const chatLog = document.getElementById('chat-log');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message ' + sender + '-message';
+            messageDiv.innerText = message;
+            chatLog.appendChild(messageDiv);
+            
+            // Auto-scroll to the latest message
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chatLog = document.getElementById('chat-log');
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'chat-message bot-message typing-indicator';
+            typingIndicator.id = 'typing-indicator';
+            typingIndicator.innerHTML = "<span>•</span> <span>•</span> <span>•</span>";
+            chatLog.appendChild(typingIndicator);
+            
+            // Auto-scroll to the typing indicator
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const userMessage = userInput.value;
+
+            if (userMessage === '') return;
+
+            addMessageToChat(userMessage, 'user');
+            userInput.value = '';
+
+            showTypingIndicator();
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: userMessage }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                const botMessage = data.response;
+                addMessageToChat(botMessage, 'bot');
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                console.error('Error:', error);
+                alert('An error occurred while sending the message.');
+            });
+        }
+
+        function uploadImage() {
+            const imageInput = document.getElementById('image-input');
+            const file = imageInput.files[0];
+
+            if (!file) {
+                alert("Please select an image or text file to upload.");
+                return;
+            }
+
+            addMessageToChat(`File uploaded: ${file.name}`, 'user');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showTypingIndicator();
+
+            fetch('/upload_file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                const botMessage = data.error ? `Error: ${data.error}` : data.response;
+                addMessageToChat(botMessage, 'bot');
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                console.error('Error:', error);
+                alert('An error occurred while uploading the file.');
+            });
+        }
+    </script>
+
+</body>
+</html>
